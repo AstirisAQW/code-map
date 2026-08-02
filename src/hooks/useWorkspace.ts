@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useEdgesState, useNodesState, type Edge, type Node } from '@xyflow/react';
 import { readDirectory } from '../lib/fileSystem';
-import { createNodes, parseEdges } from '../lib/parser';
+import { createNodes, parseEdges, relayoutByMeasuredSize } from '../lib/parser';
 import { sampleFiles } from '../lib/sampleData';
 import type { FileNodeData, LoadingProgress } from '../types';
 
@@ -18,6 +18,7 @@ export function useWorkspace() {
   const [directoryName, setDirectoryName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState<LoadingProgress | null>(null);
+  const [hiddenPaths, setHiddenPaths] = useState<Set<string>>(new Set());
 
   const loadFiles = useCallback(
     (nextFiles: FileNodeData[], name: string) => {
@@ -26,6 +27,7 @@ export function useWorkspace() {
       setLoadingProgress({ phase: 'layout', current: nextFiles.length, total: nextFiles.length });
       setFiles(nextFiles);
       setDirectoryName(name);
+      setHiddenPaths(new Set());
       setNodes(graph.nodes);
       setEdges(graph.edges);
     },
@@ -64,6 +66,45 @@ export function useWorkspace() {
     }
   }, [loadFiles]);
 
+  // Toggles a file's node in/out of the graph. hiddenPaths drives the
+  // sidebar's eye icon; node.hidden drives React Flow (which also hides
+  // that node's connected edges automatically).
+  const toggleFileHidden = useCallback(
+    (filePath: string) => {
+      setHiddenPaths((current) => {
+        const next = new Set(current);
+        if (next.has(filePath)) {
+          next.delete(filePath);
+        } else {
+          next.add(filePath);
+        }
+        return next;
+      });
+
+      setNodes((currentNodes) =>
+        currentNodes.map((node) =>
+          node.id === filePath ? { ...node, hidden: !(node.hidden ?? false) } : node,
+        ),
+      );
+    },
+    [setNodes],
+  );
+
+  const relayoutNodes = useCallback(() => {
+    setNodes((currentNodes) => relayoutByMeasuredSize(currentNodes));
+  }, [setNodes]);
+
+  // Marks a node as selected in the graph (used when a file is picked from
+  // the sidebar, so selection highlighting works in both directions).
+  const selectFile = useCallback(
+    (filePath: string) => {
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => ({ ...node, selected: node.id === filePath })),
+      );
+    },
+    [setNodes],
+  );
+
   return {
     nodes,
     edges,
@@ -71,10 +112,14 @@ export function useWorkspace() {
     directoryName,
     loading,
     loadingProgress,
+    hiddenPaths,
     onNodesChange,
     onEdgesChange,
     loadSampleData,
     openFolder,
     setEdges,
+    toggleFileHidden,
+    relayoutNodes,
+    selectFile,
   };
 }

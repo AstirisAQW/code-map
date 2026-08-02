@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -6,16 +6,18 @@ import {
   BackgroundVariant,
   Panel,
   MiniMap,
+  useNodesInitialized,
   type Connection,
   type Edge,
   type Node,
   type OnNodesChange,
   type OnEdgesChange,
+  type OnSelectionChangeParams,
   useReactFlow,
   ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { LayoutTemplate } from 'lucide-react';
+import { LayoutTemplate, LayoutGrid } from 'lucide-react';
 import { useSyntaxTheme } from '../hooks/useSyntaxTheme';
 import { FileNode } from './FileNode';
 import { EmptyState } from './EmptyState';
@@ -34,6 +36,8 @@ interface GraphCanvasProps {
   onLoadSample: () => void;
   focusNodePath: string | null;
   onFocusComplete: () => void;
+  onSelectionChange: (filePaths: string[]) => void;
+  onRelayout: () => void;
 }
 
 function GraphCanvasInner({
@@ -47,10 +51,14 @@ function GraphCanvasInner({
   onLoadSample,
   focusNodePath,
   onFocusComplete,
+  onSelectionChange,
+  onRelayout,
 }: GraphCanvasProps) {
   const { setCenter, getNode } = useReactFlow();
   const { themeName, graphColors } = useSyntaxTheme();
   const lastFocusedPath = useRef<string | null>(null);
+  const nodesInitialized = useNodesInitialized();
+  const hasAutoLaidOut = useRef(false);
 
   useEffect(() => {
     if (!focusNodePath || focusNodePath === lastFocusedPath.current) return;
@@ -68,6 +76,23 @@ function GraphCanvasInner({
     onFocusComplete();
   }, [focusNodePath, getNode, onFocusComplete, setCenter]);
 
+  // Once every node has been measured by React Flow for the first time,
+  // replace the initial line-count-based positions with a layout based on
+  // real rendered size so nothing overlaps.
+  useEffect(() => {
+    if (nodesInitialized && nodes.length > 0 && !hasAutoLaidOut.current) {
+      hasAutoLaidOut.current = true;
+      onRelayout();
+    }
+  }, [nodesInitialized, nodes.length, onRelayout]);
+
+  const handleSelectionChange = useCallback(
+    ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
+      onSelectionChange(selectedNodes.map((node) => node.id));
+    },
+    [onSelectionChange],
+  );
+
   return (
     <div className="relative flex-1" style={{ backgroundColor: graphColors.canvasBackground }}>
       <ReactFlow
@@ -76,6 +101,7 @@ function GraphCanvasInner({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onSelectionChange={handleSelectionChange}
         nodeTypes={nodeTypes}
         fitView
         minZoom={0.05}
@@ -108,7 +134,7 @@ function GraphCanvasInner({
           }}
         />
 
-        <Panel position="top-left" className="m-4">
+        <Panel position="top-left" className="m-4 flex gap-2">
           <button
             type="button"
             onClick={onToggleSidebar}
@@ -121,6 +147,19 @@ function GraphCanvasInner({
             title="Toggle Sidebar"
           >
             <LayoutTemplate className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={onRelayout}
+            className="rounded-lg border p-2.5 shadow-xl transition-all"
+            style={{
+              backgroundColor: graphColors.controlsBackground,
+              borderColor: graphColors.controlsBorder,
+              color: graphColors.controlsIcon,
+            }}
+            title="Auto-arrange nodes by their current size"
+          >
+            <LayoutGrid className="h-5 w-5" />
           </button>
         </Panel>
       </ReactFlow>

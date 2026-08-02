@@ -10,6 +10,7 @@ export default function App() {
   const [uiMode, setUiMode] = useState<UiMode>('dark');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [focusNodePath, setFocusNodePath] = useState<string | null>(null);
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
 
   const workspace = useWorkspace();
 
@@ -18,8 +19,17 @@ export default function App() {
     [workspace],
   );
 
-  const handleFileSelect = useCallback((filePath: string) => {
-    setFocusNodePath(filePath);
+  const handleFileSelect = useCallback(
+    (filePath: string) => {
+      setFocusNodePath(filePath);
+      setSelectedFilePath(filePath);
+      workspace.selectFile(filePath);
+    },
+    [workspace],
+  );
+
+  const handleGraphSelectionChange = useCallback((filePaths: string[]) => {
+    setSelectedFilePath(filePaths[0] ?? null);
   }, []);
 
   return (
@@ -35,8 +45,12 @@ export default function App() {
           isOpen={isSidebarOpen}
           onOpenFolder={workspace.openFolder}
           onFileSelect={handleFileSelect}
+          hiddenPaths={workspace.hiddenPaths}
+          onToggleFileHidden={workspace.toggleFileHidden}
+          selectedFilePath={selectedFilePath}
         />
         <GraphCanvas
+          key={workspace.directoryName ?? 'empty'}
           nodes={workspace.nodes}
           edges={workspace.edges}
           onNodesChange={workspace.onNodesChange}
@@ -48,6 +62,8 @@ export default function App() {
           onLoadSample={workspace.loadSampleData}
           focusNodePath={focusNodePath}
           onFocusComplete={() => setFocusNodePath(null)}
+          onSelectionChange={handleGraphSelectionChange}
+          onRelayout={workspace.relayoutNodes}
         />
       </div>
     </SyntaxThemeProvider>

@@ -16,6 +16,9 @@ interface SidebarProps {
   isOpen: boolean;
   onOpenFolder: () => void;
   onFileSelect: (filePath: string) => void;
+  hiddenPaths: Set<string>;
+  onToggleFileHidden: (filePath: string) => void;
+  selectedFilePath: string | null;
 }
 
 function getLoadingLabel(progress: LoadingProgress | null, loading: boolean): string {
@@ -179,6 +182,9 @@ export function Sidebar({
   isOpen,
   onOpenFolder,
   onFileSelect,
+  hiddenPaths,
+  onToggleFileHidden,
+  selectedFilePath,
 }: SidebarProps) {
   const isLight = uiMode === 'light';
   const workspaceTree = buildWorkspaceTree(files);
@@ -228,7 +234,9 @@ export function Sidebar({
             <div className="mt-6">
               <div className="mb-2 flex items-center justify-between">
                 <div className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Workspace</div>
-                <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400">{files.length} files</span>
+                <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400">
+                  {files.length} files{hiddenPaths.size > 0 ? ` · ${hiddenPaths.size} hidden` : ''}
+                </span>
               </div>
               <div
                 className={cn(
@@ -238,7 +246,14 @@ export function Sidebar({
               >
                 {directoryName}
               </div>
-              <WorkspaceTree tree={workspaceTree} isLight={isLight} onFileSelect={onFileSelect} />
+              <WorkspaceTree
+                tree={workspaceTree}
+                isLight={isLight}
+                onFileSelect={onFileSelect}
+                hiddenPaths={hiddenPaths}
+                onToggleFileHidden={onToggleFileHidden}
+                selectedFilePath={selectedFilePath}
+              />
             </div>
           )}
         </div>
