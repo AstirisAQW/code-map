@@ -21,6 +21,22 @@ export const SKIP_DIRS = new Set([
   '.turbo',
 ]);
 
+// Exact filenames that are project machinery rather than source code. These
+// would otherwise pass the ALLOWED_EXTENSIONS check (e.g. package.json is
+// .json, vite.config.ts is .ts) and clutter the graph, so they're excluded
+// by name regardless of extension.
+export const EXCLUDED_FILES = new Set([
+  'eslint.config.js',
+  'index.html',
+  'package-lock.json',
+  'package.json',
+  'tsconfig.app.json',
+  'tsconfig.json',
+  'tsconfig.node.json',
+  'vite.config.ts',
+  'README.md',
+]);
+
 export const MAX_FILE_SIZE_BYTES = 512 * 1024;
 export const READ_CONCURRENCY = 8;
 

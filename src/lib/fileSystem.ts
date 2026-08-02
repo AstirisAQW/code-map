@@ -1,5 +1,6 @@
 import {
   ALLOWED_EXTENSIONS,
+  EXCLUDED_FILES,
   MAX_FILE_SIZE_BYTES,
   READ_CONCURRENCY,
   SKIP_DIRS,
@@ -22,6 +23,8 @@ function getLanguage(extension: string): string {
 }
 
 function isAllowedFile(name: string): boolean {
+  if (EXCLUDED_FILES.has(name)) return false;
+
   const dotIndex = name.lastIndexOf('.');
   if (dotIndex === -1) return false;
   const extension = name.slice(dotIndex);
