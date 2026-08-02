@@ -82,6 +82,8 @@ function GraphCanvasInner({
         maxZoom={2}
         defaultViewport={{ x: 0, y: 0, zoom: 0.5 }}
         colorMode={themeName}
+        panOnScroll
+        zoomActivationKeyCode="Control"
         style={{ backgroundColor: graphColors.canvasBackground }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={2} color={graphColors.dotColor} />
