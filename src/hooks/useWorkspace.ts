@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useEdgesState, useNodesState, type Edge, type Node } from '@xyflow/react';
 import { readDirectory } from '../lib/fileSystem';
-import { createNodes, parseEdges, relayoutByMeasuredSize } from '../lib/parser';
+import { parseEdges } from '../lib/graph/importParser';
+import { createNodes, relayoutByMeasuredSize } from '../lib/graph/layout';
 import { sampleFiles } from '../lib/sampleData';
 import type { FileNodeData, LoadingProgress } from '../types';
 

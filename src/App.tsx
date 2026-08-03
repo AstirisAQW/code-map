@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { addEdge, type Connection, type Edge } from '@xyflow/react';
 import { Sidebar } from './components/Sidebar';
-import { GraphCanvas } from './components/GraphCanvas';
+import { GraphCanvas } from './components/graph-canvas/GraphCanvas';
 import { SyntaxThemeProvider } from './hooks/useSyntaxTheme';
 import { useWorkspace } from './hooks/useWorkspace';
 import type { UiMode } from './types';

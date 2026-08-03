@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import { FolderOpen, Layers, Monitor, Palette } from 'lucide-react';
+import { FolderOpen } from 'lucide-react';
 import { buildWorkspaceTree } from '../lib/workspaceTree';
-import type { FileNodeData, LoadingProgress, SyntaxThemeName, UiMode } from '../types';
-import { useSyntaxTheme } from '../hooks/useSyntaxTheme';
+import { getLoadingLabel } from '../lib/loadingLabel';
+import type { FileNodeData, LoadingProgress, UiMode } from '../types';
 import { cn } from '../lib/utils';
-import { WorkspaceTree } from './WorkspaceTree';
+import { SidebarHeader } from './SidebarHeader';
+import { WorkspaceTree } from './workspace-tree/WorkspaceTree';
 
 interface SidebarProps {
   uiMode: UiMode;
@@ -19,157 +19,6 @@ interface SidebarProps {
   hiddenPaths: Set<string>;
   onToggleFileHidden: (filePath: string) => void;
   selectedFilePath: string | null;
-}
-
-function getLoadingLabel(progress: LoadingProgress | null, loading: boolean): string {
-  if (!loading) return 'Open Folder';
-  if (!progress) return 'Analyzing...';
-
-  if (progress.phase === 'reading') {
-    if (progress.total === 0) return 'Scanning files...';
-    return `Reading ${progress.current}/${progress.total} files...`;
-  }
-  if (progress.phase === 'parsing') return 'Parsing imports...';
-  return 'Building graph...';
-}
-
-function useCloseOnOutsideClick(onClose: () => void) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener('mousedown', handlePointerDown);
-    return () => document.removeEventListener('mousedown', handlePointerDown);
-  }, [onClose]);
-
-  return containerRef;
-}
-
-interface PanelThemeDropdownProps {
-  uiMode: UiMode;
-  onUiModeChange: (mode: UiMode) => void;
-  isLight: boolean;
-}
-
-function PanelThemeDropdown({ uiMode, onUiModeChange, isLight }: PanelThemeDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useCloseOnOutsideClick(() => setOpen(false));
-
-  const options: { value: UiMode; label: string }[] = [
-    { value: 'dark', label: 'Dark Theme' },
-    { value: 'light', label: 'Light Theme' },
-  ];
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        title="Panel theme"
-        aria-label="Panel theme"
-        className={cn(
-          'flex h-8 w-8 items-center justify-center rounded-md border transition-colors',
-          isLight
-            ? 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'
-            : 'border-neutral-800 bg-neutral-900 text-neutral-400 hover:bg-neutral-800',
-        )}
-      >
-        <Monitor className="h-4 w-4" />
-      </button>
-      {open && (
-        <div
-          className={cn(
-            'absolute right-0 top-full z-20 mt-2 w-44 overflow-hidden rounded-md border py-1 shadow-xl',
-            isLight ? 'border-neutral-200 bg-white' : 'border-neutral-800 bg-neutral-900',
-          )}
-        >
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                onUiModeChange(option.value);
-                setOpen(false);
-              }}
-              className={cn(
-                'flex w-full items-center px-3 py-2 text-left text-sm transition-colors',
-                option.value === uiMode
-                  ? 'text-blue-500'
-                  : isLight
-                    ? 'text-neutral-700 hover:bg-neutral-50'
-                    : 'text-neutral-300 hover:bg-white/5',
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function GraphThemeDropdown({ isLight }: { isLight: boolean }) {
-  const { themeName, setThemeName } = useSyntaxTheme();
-  const [open, setOpen] = useState(false);
-  const containerRef = useCloseOnOutsideClick(() => setOpen(false));
-
-  const options: { value: SyntaxThemeName; label: string }[] = [
-    { value: 'dark', label: 'Dark Theme' },
-    { value: 'light', label: 'Light Theme' },
-  ];
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        title="Graph theme"
-        aria-label="Graph theme"
-        className={cn(
-          'flex h-8 w-8 items-center justify-center rounded-md border transition-colors',
-          isLight
-            ? 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50'
-            : 'border-neutral-800 bg-neutral-900 text-neutral-400 hover:bg-neutral-800',
-        )}
-      >
-        <Palette className="h-4 w-4" />
-      </button>
-      {open && (
-        <div
-          className={cn(
-            'absolute right-0 top-full z-20 mt-2 w-44 overflow-hidden rounded-md border py-1 shadow-xl',
-            isLight ? 'border-neutral-200 bg-white' : 'border-neutral-800 bg-neutral-900',
-          )}
-        >
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                setThemeName(option.value);
-                setOpen(false);
-              }}
-              className={cn(
-                'flex w-full items-center px-3 py-2 text-left text-sm transition-colors',
-                option.value === themeName
-                  ? 'text-blue-500'
-                  : isLight
-                    ? 'text-neutral-700 hover:bg-neutral-50'
-                    : 'text-neutral-300 hover:bg-white/5',
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export function Sidebar({
@@ -198,16 +47,7 @@ export function Sidebar({
       )}
     >
       <div className="flex h-full w-80 flex-col p-6">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-            <Layers className="h-5 w-5 text-white" />
-          </div>
-          <h1 className={cn('flex-1 text-lg font-semibold tracking-tight', isLight ? 'text-black' : 'text-white')}>
-            Code Canvas
-          </h1>
-          <PanelThemeDropdown uiMode={uiMode} onUiModeChange={onUiModeChange} isLight={isLight} />
-          <GraphThemeDropdown isLight={isLight} />
-        </div>
+        <SidebarHeader uiMode={uiMode} onUiModeChange={onUiModeChange} isLight={isLight} />
 
         <div className="custom-scrollbar -mr-2 flex-1 overflow-y-auto pr-2">
           <p className={cn('mb-6 text-sm leading-relaxed', isLight ? 'text-neutral-600' : 'text-neutral-400')}>

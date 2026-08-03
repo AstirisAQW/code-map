@@ -59,5 +59,3 @@ export function useSyntaxTheme(): SyntaxThemeContextValue {
   }
   return context;
 }
-
-export { SYNTAX_THEME_STYLES };

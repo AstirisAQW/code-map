@@ -50,3 +50,8 @@ function sortTreeNodes(nodes: WorkspaceTreeNode[]): void {
     }
   }
 }
+
+/** True if `path` is `parentPath` itself or lives somewhere under it. */
+export function isParentOf(parentPath: string, path: string): boolean {
+  return path === parentPath || path.startsWith(`${parentPath}/`);
+}
